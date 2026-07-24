@@ -31,7 +31,51 @@ export default function Home() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [captureMode, setCaptureMode] = useState<CaptureMode>('photo');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 全屏切换
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (error) {
+      console.error('Fullscreen error:', error);
+    }
+  };
+
+  // 监听全屏变化
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  // 组件挂载时自动进入全屏
+  useEffect(() => {
+    const enterFullscreen = async () => {
+      try {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+      } catch (error) {
+        console.log('Auto fullscreen failed (user may need to interact first):', error);
+      }
+    };
+
+    // 延迟 500ms 后尝试自动全屏
+    const timer = setTimeout(enterFullscreen, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // 更新当前时间
   useEffect(() => {
@@ -151,7 +195,7 @@ export default function Home() {
       <canvas
         ref={canvasRef}
         className="w-full h-full object-cover"
-        style={{ transform: 'scaleX(-1)' }}
+        style={{ transform: cameraState.facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
       />
 
       {/* 闪光动画 */}

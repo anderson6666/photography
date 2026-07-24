@@ -70,18 +70,25 @@ export function useCamera() {
   // 切换前后摄像头
   const switchCamera = useCallback(async () => {
     stopCamera();
+    // 先重置状态，确保可以重新启动
     setCameraState((prev) => ({
       ...prev,
+      isReady: false,
+      error: undefined,
       facingMode: prev.facingMode === 'user' ? 'environment' : 'user',
     }));
-  }, [stopCamera]);
+    // 延迟启动新相机，确保状态已更新
+    setTimeout(() => {
+      startCamera();
+    }, 100);
+  }, [stopCamera, startCamera]);
 
-  // 当 facingMode 改变时重新启动相机
+  // 当组件挂载时自动启动相机
   useEffect(() => {
     if (!cameraState.isReady && !cameraState.error) {
       startCamera();
     }
-  }, [cameraState.facingMode, startCamera, cameraState.isReady, cameraState.error]);
+  }, [startCamera, cameraState.isReady, cameraState.error]);
 
   // 组件卸载时清理
   useEffect(() => {
