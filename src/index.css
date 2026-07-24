@@ -79,6 +79,22 @@ input[type='range']::-moz-range-track {
   animation: pulse-fast 0.15s ease-in-out;
 }
 
+/* 淡入下滑动画 */
+@keyframes fade-in-down {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.3s ease-out forwards;
+}
+
 /* 毛玻璃效果 */
 .backdrop-blur-md {
   backdrop-filter: blur(12px);

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Circle, RotateCcw, Image, Video, Eye } from 'lucide-react';
+import { Circle, Image, Video, Eye } from 'lucide-react';
 import { useCamera } from '@/hooks/useCamera';
 import { useColorProcessor } from '@/hooks/useColorProcessor';
 import { useAppStore } from '@/store';
@@ -32,6 +32,8 @@ export default function Home() {
   const [captureMode, setCaptureMode] = useState<CaptureMode>('photo');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 全屏切换
@@ -129,6 +131,11 @@ export default function Home() {
             createdAt: Date.now(),
           },
         });
+
+        // 显示成功反馈
+        setSuccessMessage('照片已保存');
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
       } catch (error) {
         console.error('Failed to capture photo:', error);
       }
@@ -166,6 +173,11 @@ export default function Home() {
 
       setRecordingState(false);
       setRecordingDuration(0);
+
+      // 显示成功反馈
+      setSuccessMessage('视频已保存');
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
     } else {
       // 开始录像
       startRecording();
@@ -201,6 +213,18 @@ export default function Home() {
       {/* 闪光动画 */}
       {showFlash && (
         <div className="absolute inset-0 bg-white animate-pulse-fast z-50" />
+      )}
+
+      {/* 成功反馈提示 */}
+      {showSuccess && (
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in-down">
+          <div className="bg-green-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 font-medium">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span>{successMessage}</span>
+          </div>
+        </div>
       )}
 
       {/* 错误提示 */}
@@ -261,7 +285,7 @@ export default function Home() {
           </div>
 
           {/* 操作按钮 */}
-          <div className="flex items-center justify-around">
+          <div className="flex items-center justify-center gap-12">
             {/* 相册按钮 */}
             <button
               onClick={() => navigate('/gallery')}
@@ -288,14 +312,6 @@ export default function Home() {
               ) : (
                 <Circle size={40} className="text-white" fill="currentColor" />
               )}
-            </button>
-
-            {/* 切换摄像头按钮 */}
-            <button
-              onClick={switchCamera}
-              className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center transition-transform active:scale-90"
-            >
-              <RotateCcw size={24} className="text-white" />
             </button>
           </div>
 
