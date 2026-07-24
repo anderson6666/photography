@@ -189,7 +189,7 @@ export default function Home() {
 
       {/* 底部控制面板 */}
       <div className="absolute bottom-0 left-0 right-0 z-30">
-        <div className="bg-black/40 backdrop-blur-md rounded-t-3xl px-6 py-4">
+        <div className="bg-black/20 backdrop-blur-md rounded-t-3xl px-6 py-4">
           {/* 模式切换器 */}
           <div className="flex justify-center gap-4 mb-4">
             <button
