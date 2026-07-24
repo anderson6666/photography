@@ -118,7 +118,16 @@ export default function Home() {
         setTimeout(() => setShowFlash(false), 150);
 
         const canvas = canvasRef.current;
-        const thumbnail = canvas ? await generateThumbnail(canvas, 200) : undefined;
+        let thumbnail: Blob | undefined;
+
+        try {
+          if (canvas && canvas.width > 0 && canvas.height > 0) {
+            thumbnail = await generateThumbnail(canvas, 200);
+            console.log('Thumbnail generated successfully:', thumbnail.size, 'bytes');
+          }
+        } catch (error) {
+          console.error('Failed to generate thumbnail:', error);
+        }
 
         // 保存到 IndexedDB
         await addMedia({
@@ -156,7 +165,16 @@ export default function Home() {
       }
 
       const canvas = canvasRef.current;
-      const thumbnail = canvas ? await generateThumbnail(canvas, 200) : undefined;
+      let thumbnail: Blob | undefined;
+
+      try {
+        if (canvas && canvas.width > 0 && canvas.height > 0) {
+          thumbnail = await generateThumbnail(canvas, 200);
+          console.log('Video thumbnail generated successfully:', thumbnail.size, 'bytes');
+        }
+      } catch (error) {
+        console.error('Failed to generate video thumbnail:', error);
+      }
 
       // 保存到 IndexedDB
       await addMedia({

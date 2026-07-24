@@ -165,7 +165,14 @@ export function useColorProcessor({ canvasRef, videoRef }: UseColorProcessorOpti
         resolve(blob);
       };
 
-      mediaRecorder.stop();
+      // 停止录制前先请求最后一帧数据
+      if (mediaRecorder.state === 'recording') {
+        mediaRecorder.requestData();
+        // 延迟 100ms 确保最后的 ondataavailable 被触发
+        setTimeout(() => {
+          mediaRecorder.stop();
+        }, 100);
+      }
     });
   }, []);
 
