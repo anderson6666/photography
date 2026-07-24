@@ -62,7 +62,7 @@ export async function getAllMedia(): Promise<Media[]> {
 
     request.onerror = () => reject(request.error);
     request.onsuccess = (event) => {
-      const cursor = (event.target as IDBCursorWithValue).result;
+      const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
       if (cursor) {
         mediaList.push(cursor.value);
         cursor.continue();
