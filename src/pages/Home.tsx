@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Circle, Image, Video, Eye } from 'lucide-react';
+import { Circle, Image, Eye } from 'lucide-react';
 import { useCamera } from '@/hooks/useCamera';
 import { useColorProcessor } from '@/hooks/useColorProcessor';
 import { useAppStore } from '@/store';
 import { generateThumbnail } from '@/lib/export';
 
-type CaptureMode = 'photo' | 'video';
-
 export default function Home() {
   const navigate = useNavigate();
-  const { videoRef, cameraState, switchCamera, startCamera } = useCamera();
+  const { videoRef, cameraState, startCamera } = useCamera();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const {
@@ -18,23 +16,17 @@ export default function Home() {
     stopRendering,
     isRendering,
     capturePhoto,
-    startRecording,
-    stopRecording,
-    isRecording,
     enableSoftLight,
     toggleSoftLight,
   } = useColorProcessor({ canvasRef, videoRef });
 
-  const { addMedia, isRecording: storeIsRecording, setRecordingState } = useAppStore();
+  const { addMedia } = useAppStore();
 
   const [showFlash, setShowFlash] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
-  const [captureMode, setCaptureMode] = useState<CaptureMode>('photo');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 全屏切换
   const toggleFullscreen = async () => {
@@ -104,65 +96,13 @@ export default function Home() {
 
   // 处理拍照
   const handleCapture = async () => {
-    if (captureMode === 'video') {
-      // 录像模式
-      handleRecordToggle();
-    } else {
-      // 拍照模式
-      try {
-        const blob = await capturePhoto();
-        if (!blob) return;
-
-        // 显示闪光动画
-        setShowFlash(true);
-        setTimeout(() => setShowFlash(false), 150);
-
-        const canvas = canvasRef.current;
-        let thumbnail: Blob | undefined;
-
-        try {
-          if (canvas && canvas.width > 0 && canvas.height > 0) {
-            thumbnail = await generateThumbnail(canvas, 200);
-            console.log('Thumbnail generated successfully:', thumbnail.size, 'bytes');
-          }
-        } catch (error) {
-          console.error('Failed to generate thumbnail:', error);
-        }
-
-        // 保存到 IndexedDB
-        await addMedia({
-          type: 'photo',
-          data: blob,
-          thumbnail,
-          metadata: {
-            width: canvas?.width || 0,
-            height: canvas?.height || 0,
-            createdAt: Date.now(),
-          },
-        });
-
-        // 显示成功反馈
-        setSuccessMessage('照片已保存');
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 2000);
-      } catch (error) {
-        console.error('Failed to capture photo:', error);
-      }
-    }
-  };
-
-  // 处理录像开始/停止
-  const handleRecordToggle = async () => {
-    if (isRecording()) {
-      // 停止录像
-      const blob = await stopRecording();
+    try {
+      const blob = await capturePhoto();
       if (!blob) return;
 
-      // 停止计时器
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
-      }
+      // 显示闪光动画
+      setShowFlash(true);
+      setTimeout(() => setShowFlash(false), 150);
 
       const canvas = canvasRef.current;
       let thumbnail: Blob | undefined;
@@ -170,50 +110,31 @@ export default function Home() {
       try {
         if (canvas && canvas.width > 0 && canvas.height > 0) {
           thumbnail = await generateThumbnail(canvas, 200);
-          console.log('Video thumbnail generated successfully:', thumbnail.size, 'bytes');
+          console.log('Thumbnail generated successfully:', thumbnail.size, 'bytes');
         }
       } catch (error) {
-        console.error('Failed to generate video thumbnail:', error);
+        console.error('Failed to generate thumbnail:', error);
       }
 
       // 保存到 IndexedDB
       await addMedia({
-        type: 'video',
+        type: 'photo',
         data: blob,
         thumbnail,
         metadata: {
           width: canvas?.width || 0,
           height: canvas?.height || 0,
-          duration: recordingDuration,
           createdAt: Date.now(),
         },
       });
 
-      setRecordingState(false);
-      setRecordingDuration(0);
-
       // 显示成功反馈
-      setSuccessMessage('视频已保存');
+      setSuccessMessage('照片已保存');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
-    } else {
-      // 开始录像
-      startRecording();
-      setRecordingState(true);
-
-      // 开始计时
-      setRecordingDuration(0);
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingDuration((prev) => prev + 1);
-      }, 1000);
+    } catch (error) {
+      console.error('Failed to capture photo:', error);
     }
-  };
-
-  // 格式化录制时长
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -261,109 +182,49 @@ export default function Home() {
       )}
 
       {/* 顶部状态栏 */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/60 to-transparent z-30">
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-center px-4 py-3 bg-gradient-to-b from-black/60 to-transparent z-30">
         <div className="text-white font-medium text-sm">
           {currentTime.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
         </div>
-        {storeIsRecording && (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-red-500 font-mono text-sm">{formatDuration(recordingDuration)}</span>
-          </div>
-        )}
       </div>
 
       {/* 底部控制面板 */}
       <div className="absolute bottom-0 left-0 right-0 z-30">
-        <div className="bg-black/20 backdrop-blur-md rounded-t-3xl px-6 py-4">
-          {/* 模式切换器 */}
-          <div className="flex justify-center gap-4 mb-4">
-            <button
-              onClick={() => setCaptureMode('photo')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-                captureMode === 'photo'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-white/10 text-white/70 hover:bg-white/20'
-              }`}
-            >
-              <Circle size={16} className={captureMode === 'photo' ? 'fill-current' : ''} />
-              <span className="text-sm font-medium">拍照</span>
-            </button>
-            <button
-              onClick={() => setCaptureMode('video')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-                captureMode === 'video'
-                  ? 'bg-red-500 text-white'
-                  : 'bg-white/10 text-white/70 hover:bg-white/20'
-              }`}
-            >
-              <Video size={16} className={captureMode === 'video' ? 'fill-current' : ''} />
-              <span className="text-sm font-medium">录像</span>
-            </button>
-          </div>
-
-          {/* 操作按钮 */}
-          <div className="flex items-center justify-center gap-12">
+        <div className="bg-black/20 backdrop-blur-md rounded-t-3xl px-6 py-6">
+          {/* 三个圆形按钮 */}
+          <div className="flex items-center justify-around">
             {/* 相册按钮 */}
             <button
               onClick={() => navigate('/gallery')}
-              className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center transition-transform active:scale-90"
+              className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center transition-transform active:scale-90"
+              title="相册"
             >
               <Image size={24} className="text-white" />
             </button>
 
-            {/* 拍照/录像按钮 */}
+            {/* 拍照按钮 */}
             <button
               onClick={handleCapture}
-              className={`w-20 h-20 rounded-full flex items-center justify-center transition-transform active:scale-90 ${
-                storeIsRecording
-                  ? 'bg-red-500'
-                  : captureMode === 'photo'
-                  ? 'bg-white border-4 border-white/30'
-                  : 'bg-red-500/80 border-4 border-red-500'
-              }`}
+              className="w-20 h-20 rounded-full bg-white border-4 border-white/30 flex items-center justify-center transition-transform active:scale-90"
+              title="拍照"
             >
-              {storeIsRecording ? (
-                <div className="w-8 h-8 bg-white rounded-sm" />
-              ) : captureMode === 'photo' ? (
-                <Circle size={40} className="text-orange-500" fill="currentColor" />
-              ) : (
-                <Circle size={40} className="text-white" fill="currentColor" />
-              )}
+              <Circle size={40} className="text-orange-500" fill="currentColor" />
             </button>
-          </div>
 
-          {/* 对比按钮 */}
-          <div className="flex justify-center mt-4">
+            {/* 对比按钮 */}
             <button
               onMouseDown={() => toggleSoftLight(false)}
               onMouseUp={() => toggleSoftLight(true)}
               onMouseLeave={() => toggleSoftLight(true)}
               onTouchStart={() => toggleSoftLight(false)}
               onTouchEnd={() => toggleSoftLight(true)}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
-                enableSoftLight
-                  ? 'bg-white/10 text-white/90 hover:bg-white/20'
-                  : 'bg-red-500 text-white'
+              className={`w-14 h-14 rounded-full flex items-center justify-center transition-transform active:scale-90 ${
+                enableSoftLight ? 'bg-white/10' : 'bg-orange-500'
               }`}
+              title="对比原图"
             >
-              <Eye size={18} />
-              <span>{enableSoftLight ? '按住对比原图' : '查看原图'}</span>
+              <Eye size={24} className="text-white" />
             </button>
-          </div>
-          
-          {/* 柔光状态提示 */}
-          <div className="text-center mt-2">
-            <span className={`text-xs font-medium ${enableSoftLight ? 'text-orange-400' : 'text-yellow-300'}`}>
-              {enableSoftLight ? '✨ 柔光效果已启用' : '📷 原始画面（无柔光）'}
-            </span>
-          </div>
-          
-          {/* 调试信息 */}
-          <div className="text-center mt-1">
-            <span className="text-xs text-white/50">
-              柔光状态: {enableSoftLight ? 'ON' : 'OFF'}
-            </span>
           </div>
         </div>
       </div>

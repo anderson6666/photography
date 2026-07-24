@@ -56,7 +56,7 @@ export default function Gallery() {
           <ArrowLeft size={24} />
           <span className="font-medium">返回</span>
         </button>
-        <h1 className="text-white font-medium text-lg">照片库</h1>
+        <h1 className="text-white font-medium text-lg">电影相机</h1>
         <div className="w-16" />
       </div>
 

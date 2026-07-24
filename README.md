@@ -1,6 +1,6 @@
-# 📸 实况调色相机
+# 🎬 电影相机
 
-一个基于 Canvas 柔光混合模式的纯前端网页相机应用，支持实时柔光效果、拍照和录像功能。
+一个基于 Canvas 柔光混合模式的纯前端网页相机应用，支持实时柔光效果和拍照功能。
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![React](https://img.shields.io/badge/React-18.2.0-61dafb?logo=react)
