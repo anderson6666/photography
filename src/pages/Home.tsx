@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Circle, Image, Eye } from 'lucide-react';
+import { Circle, Image, Eye, Maximize2 } from 'lucide-react';
 import { useCamera } from '@/hooks/useCamera';
 import { useColorProcessor } from '@/hooks/useColorProcessor';
 import { useAppStore } from '@/store';
@@ -27,19 +27,14 @@ export default function Home() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [hasEnteredFullscreen, setHasEnteredFullscreen] = useState(false);
+  const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(true);
 
   // 全屏切换
-  const toggleFullscreen = async () => {
+  const enterFullscreen = async () => {
     try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
-        setIsFullscreen(true);
-        setHasEnteredFullscreen(true);
-      } else {
-        await document.exitFullscreen();
-        setIsFullscreen(false);
-      }
+      await document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+      setShowFullscreenPrompt(false);
     } catch (error) {
       console.error('Fullscreen error:', error);
     }
@@ -48,7 +43,11 @@ export default function Home() {
   // 监听全屏变化
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const isInFullscreen = !!document.fullscreenElement;
+      setIsFullscreen(isInFullscreen);
+      if (isInFullscreen) {
+        setShowFullscreenPrompt(false);
+      }
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -56,33 +55,6 @@ export default function Home() {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
-
-  // 首次用户交互后自动全屏
-  useEffect(() => {
-    const handleFirstInteraction = async () => {
-      if (!hasEnteredFullscreen && !document.fullscreenElement) {
-        try {
-          await document.documentElement.requestFullscreen();
-          setIsFullscreen(true);
-          setHasEnteredFullscreen(true);
-        } catch (error) {
-          console.log('Auto fullscreen after interaction failed:', error);
-        }
-      }
-    };
-
-    // 监听用户的首次交互（点击或触摸）
-    const events = ['click', 'touchstart'];
-    events.forEach((event) => {
-      document.addEventListener(event, handleFirstInteraction, { once: true });
-    });
-
-    return () => {
-      events.forEach((event) => {
-        document.removeEventListener(event, handleFirstInteraction);
-      });
-    };
-  }, [hasEnteredFullscreen]);
 
   // 更新当前时间
   useEffect(() => {
@@ -176,6 +148,19 @@ export default function Home() {
             </svg>
             <span>{successMessage}</span>
           </div>
+        </div>
+      )}
+
+      {/* 全屏提示 */}
+      {showFullscreenPrompt && !isFullscreen && (
+        <div className="absolute top-24 left-1/2 transform -translate-x-1/2 z-50">
+          <button
+            onClick={enterFullscreen}
+            className="bg-white/95 backdrop-blur-sm text-gray-800 px-6 py-3 rounded-full shadow-xl flex items-center gap-3 font-medium hover:bg-white transition-colors animate-bounce-subtle"
+          >
+            <Maximize2 size={20} className="text-orange-500" />
+            <span>点击进入全屏模式</span>
+          </button>
         </div>
       )}
 
