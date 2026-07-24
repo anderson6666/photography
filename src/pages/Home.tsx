@@ -27,6 +27,7 @@ export default function Home() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [hasEnteredFullscreen, setHasEnteredFullscreen] = useState(false);
 
   // 全屏切换
   const toggleFullscreen = async () => {
@@ -34,6 +35,7 @@ export default function Home() {
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
         setIsFullscreen(true);
+        setHasEnteredFullscreen(true);
       } else {
         await document.exitFullscreen();
         setIsFullscreen(false);
@@ -55,21 +57,32 @@ export default function Home() {
     };
   }, []);
 
-  // 组件挂载时自动进入全屏
+  // 首次用户交互后自动全屏
   useEffect(() => {
-    const enterFullscreen = async () => {
-      try {
-        await document.documentElement.requestFullscreen();
-        setIsFullscreen(true);
-      } catch (error) {
-        console.log('Auto fullscreen failed (user may need to interact first):', error);
+    const handleFirstInteraction = async () => {
+      if (!hasEnteredFullscreen && !document.fullscreenElement) {
+        try {
+          await document.documentElement.requestFullscreen();
+          setIsFullscreen(true);
+          setHasEnteredFullscreen(true);
+        } catch (error) {
+          console.log('Auto fullscreen after interaction failed:', error);
+        }
       }
     };
 
-    // 延迟 500ms 后尝试自动全屏
-    const timer = setTimeout(enterFullscreen, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    // 监听用户的首次交互（点击或触摸）
+    const events = ['click', 'touchstart'];
+    events.forEach((event) => {
+      document.addEventListener(event, handleFirstInteraction, { once: true });
+    });
+
+    return () => {
+      events.forEach((event) => {
+        document.removeEventListener(event, handleFirstInteraction);
+      });
+    };
+  }, [hasEnteredFullscreen]);
 
   // 更新当前时间
   useEffect(() => {
